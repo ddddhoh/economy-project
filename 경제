@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>경제책 읽기 프로젝트 6개월 — 책온</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700;900&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E8C96A;
+    --gold-pale: #F5E9C8;
+    --ink: #1A1A2E;
+    --ink-mid: #2D2D4A;
+    --cream: #FAF7F0;
+    --warm-white: #FFFEF9;
+    --text-body: #3A3A52;
+    --text-muted: #8A8AA0;
+    --border: #E5DFC8;
+    --step1: #4A7C59;
+    --step2: #7C5B2E;
+    --step3: #2E4A7C;
+    --month-bg-1: #F0F7F2;
+    --month-bg-2: #F7F2EC;
+    --month-bg-3: #EEF2F9;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans KR', sans-serif; background: var(--cream); color: var(--text-body); line-height: 1.6; }
+
+  header { background: var(--ink); position: sticky; top: 0; z-index: 100; border-bottom: 2px solid var(--gold); }
+  .header-inner { max-width: 1100px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .logo { font-family: 'Noto Serif KR', serif; font-size: 1.3rem; font-weight: 900; color: var(--gold); letter-spacing: -0.02em; text-decoration: none; }
+  .logo span { color: #fff; font-weight: 300; font-size: 0.75rem; display: block; letter-spacing: 0.08em; margin-top: -2px; }
+  nav { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  nav button { background: none; border: 1px solid rgba(201,168,76,0.4); color: rgba(255,255,255,0.8); padding: 6px 14px; border-radius: 20px; font-size: 0.82rem; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+  nav button:hover, nav button.active { background: var(--gold); border-color: var(--gold); color: var(--ink); font-weight: 700; }
+
+  .hero { background: linear-gradient(160deg, var(--ink) 0%, var(--ink-mid) 60%, #1A2744 100%); padding: 64px 24px 52px; text-align: center; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.12) 0%, transparent 65%); }
+  .hero-eyebrow { font-size: 0.78rem; letter-spacing: 0.18em; color: var(--gold); text-transform: uppercase; margin-bottom: 14px; position: relative; }
+  .hero h1 { font-family: 'Noto Serif KR', serif; font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 900; color: #fff; line-height: 1.2; position: relative; margin-bottom: 10px; }
+  .hero h1 em { color: var(--gold); font-style: normal; }
+  .hero-sub { color: rgba(255,255,255,0.65); font-size: 0.92rem; margin-bottom: 36px; position: relative; }
+  .hero-steps { display: flex; justify-content: center; gap: 0; position: relative; flex-wrap: wrap; }
+  .hero-step { display: flex; align-items: center; gap: 10px; }
+  .hero-step-box { background: rgba(255,255,255,0.07); border: 1px solid rgba(201,168,76,0.35); border-radius: 10px; padding: 14px 22px; text-align: center; }
+  .hero-step-num { font-size: 0.7rem; color: var(--gold); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
+  .hero-step-label { font-family: 'Noto Serif KR', serif; font-size: 0.95rem; color: #fff; font-weight: 700; }
+  .hero-step-desc { font-size: 0.72rem; color: rgba(255,255,255,0.5); margin-top: 3px; }
+  .arrow-sep { color: var(--gold); font-size: 1.2rem; padding: 0 8px; margin-top: 4px; }
+
+  .view-bar { max-width: 1100px; margin: 0 auto; padding: 28px 24px 0; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .view-bar-label { font-size: 0.8rem; color: var(--text-muted); margin-right: 4px; }
+  .view-btn { padding: 8px 18px; border-radius: 22px; border: 1.5px solid var(--border); background: white; font-size: 0.85rem; cursor: pointer; font-family: inherit; color: var(--text-body); transition: all 0.18s; font-weight: 500; }
+  .view-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .view-btn.active { background: var(--ink); border-color: var(--ink); color: var(--gold); font-weight: 700; }
+
+  .main-content { max-width: 1100px; margin: 0 auto; padding: 28px 24px 64px; }
+
+  .books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+  .book-card { background: white; border-radius: 14px; border: 1px solid var(--border); overflow: hidden; transition: box-shadow 0.2s, transform 0.2s; }
+  .book-card:hover { box-shadow: 0 8px 32px rgba(26,26,46,0.12); transform: translateY(-2px); }
+  .book-card-header { padding: 20px 20px 16px; display: flex; gap: 14px; align-items: flex-start; }
+  .book-month-badge { min-width: 44px; height: 44px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; font-size: 1.1rem; line-height: 1; flex-shrink: 0; }
+  .book-month-badge span { font-size: 0.55rem; font-weight: 500; margin-top: 1px; }
+  .step1-color { background: var(--month-bg-1); color: var(--step1); }
+  .step2-color { background: var(--month-bg-2); color: var(--step2); }
+  .step3-color { background: var(--month-bg-3); color: var(--step3); }
+  .book-meta { flex: 1; min-width: 0; }
+  .book-step-tag { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 6px; }
+  .tag-step1 { background: var(--month-bg-1); color: var(--step1); }
+  .tag-step2 { background: var(--month-bg-2); color: var(--step2); }
+  .tag-step3 { background: var(--month-bg-3); color: var(--step3); }
+  .book-title { font-family: 'Noto Serif KR', serif; font-size: 1.05rem; font-weight: 700; color: var(--ink); line-height: 1.3; margin-bottom: 3px; }
+  .book-author { font-size: 0.78rem; color: var(--text-muted); }
+  .book-theme { padding: 0 20px 14px; font-size: 0.8rem; color: var(--text-body); border-bottom: 1px solid var(--border); font-style: italic; }
+  .book-posts { padding: 14px 20px; }
+  .book-posts-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .book-posts-title { font-size: 0.8rem; font-weight: 700; color: var(--ink); }
+  .add-post-btn { font-size: 0.75rem; background: var(--gold); color: var(--ink); border: none; padding: 5px 12px; border-radius: 16px; cursor: pointer; font-weight: 700; font-family: inherit; transition: background 0.15s; }
+  .add-post-btn:hover { background: var(--gold-light); }
+  .post-list { display: flex; flex-direction: column; gap: 6px; }
+  .post-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; background: var(--cream); cursor: pointer; transition: background 0.15s; }
+  .post-item:hover { background: var(--gold-pale); }
+  .post-avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: var(--gold); font-size: 0.7rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .post-info { flex: 1; min-width: 0; }
+  .post-name { font-size: 0.8rem; font-weight: 700; color: var(--ink); }
+  .post-excerpt { font-size: 0.72rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .post-date { font-size: 0.68rem; color: var(--text-muted); flex-shrink: 0; }
+  .empty-posts { text-align: center; padding: 16px; color: var(--text-muted); font-size: 0.8rem; }
+  .empty-posts span { display: block; font-size: 1.5rem; margin-bottom: 4px; }
+
+  .member-select-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 28px; padding: 16px 20px; background: white; border-radius: 12px; border: 1px solid var(--border); align-items: center; }
+  .member-select-label { font-size: 0.82rem; color: var(--text-muted); width: 100%; }
+  .member-chip { display: flex; align-items: center; gap: 7px; padding: 7px 14px 7px 8px; border-radius: 22px; border: 1.5px solid var(--border); background: var(--cream); cursor: pointer; font-size: 0.82rem; font-family: inherit; transition: all 0.15s; color: var(--text-body); }
+  .member-chip:hover { border-color: var(--gold); }
+  .member-chip.selected { background: var(--ink); border-color: var(--ink); color: var(--gold); font-weight: 700; }
+  .member-chip .chip-avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--gold); color: var(--ink); font-size: 0.68rem; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+
+  .member-progress { background: white; border-radius: 14px; border: 1px solid var(--border); padding: 24px; margin-bottom: 24px; }
+  .member-progress-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+  .member-big-avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--ink); color: var(--gold); font-size: 1.2rem; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 2px solid var(--gold); }
+  .member-name-block { flex: 1; }
+  .member-name { font-family: 'Noto Serif KR', serif; font-size: 1.2rem; font-weight: 700; color: var(--ink); }
+  .member-stat { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+  .member-stat strong { color: var(--gold); font-weight: 700; }
+  .progress-bar-wrap { margin-bottom: 8px; }
+  .progress-label { display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 5px; color: var(--text-muted); }
+  .progress-label strong { color: var(--ink); }
+  .progress-track { height: 8px; border-radius: 4px; background: var(--border); overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); transition: width 0.5s ease; }
+
+  .member-books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .member-book-row { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 18px; transition: box-shadow 0.15s; }
+  .member-book-row:hover { box-shadow: 0 4px 18px rgba(26,26,46,0.08); }
+  .member-book-row-header { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px; }
+  .member-post-area { background: var(--cream); border-radius: 8px; padding: 12px 14px; cursor: pointer; transition: background 0.15s; border: 1px dashed var(--border); }
+  .member-post-area:hover { background: var(--gold-pale); border-color: var(--gold); }
+  .member-post-area.has-post { border: 1px solid var(--border); border-style: solid; }
+  .member-post-title { font-size: 0.82rem; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+  .member-post-body { font-size: 0.78rem; color: var(--text-body); line-height: 1.55; }
+  .member-post-empty { font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 6px 0; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(26,26,46,0.65); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: white; border-radius: 18px; max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 64px rgba(26,26,46,0.25); }
+  .modal-header { padding: 24px 24px 0; display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+  .modal-title { font-family: 'Noto Serif KR', serif; font-size: 1.1rem; font-weight: 700; color: var(--ink); }
+  .modal-sub { font-size: 0.78rem; color: var(--text-muted); margin-top: 3px; }
+  .modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--text-muted); line-height: 1; padding: 0 4px; }
+  .modal-close:hover { color: var(--ink); }
+  .modal-body { padding: 20px 24px 24px; }
+  .field-group { margin-bottom: 16px; }
+  .field-label { font-size: 0.8rem; font-weight: 700; color: var(--ink); margin-bottom: 6px; display: block; }
+  .field-input, .field-textarea { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.88rem; color: var(--ink); background: var(--cream); transition: border-color 0.15s; outline: none; resize: vertical; }
+  .field-input:focus, .field-textarea:focus { border-color: var(--gold); background: white; }
+  .field-textarea { min-height: 120px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+  .btn-cancel { padding: 10px 20px; border-radius: 8px; border: 1.5px solid var(--border); background: none; cursor: pointer; font-family: inherit; font-size: 0.88rem; color: var(--text-body); }
+  .btn-submit { padding: 10px 24px; border-radius: 8px; border: none; background: var(--ink); cursor: pointer; font-family: inherit; font-size: 0.88rem; color: var(--gold); font-weight: 700; }
+  .btn-submit:hover { background: var(--ink-mid); }
+  .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .post-detail-content { padding: 20px 24px 24px; }
+  .post-detail-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .post-detail-author { font-weight: 700; font-size: 0.9rem; color: var(--ink); }
+  .post-detail-book { font-size: 0.78rem; color: var(--text-muted); }
+  .post-detail-date { font-size: 0.75rem; color: var(--text-muted); margin-left: auto; }
+  .post-detail-title { font-family: 'Noto Serif KR', serif; font-size: 1.2rem; font-weight: 700; color: var(--ink); margin-bottom: 12px; }
+  .post-detail-body { font-size: 0.9rem; line-height: 1.8; color: var(--text-body); white-space: pre-wrap; }
+  .post-detail-delete { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; }
+  .btn-delete { font-size: 0.78rem; color: #999; background: none; border: 1px solid #ddd; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-family: inherit; }
+  .btn-delete:hover { color: #e05; border-color: #e05; }
+
+  .loading-spinner { text-align: center; padding: 40px; color: var(--text-muted); font-size: 0.9rem; }
+  .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--gold); padding: 12px 24px; border-radius: 24px; font-size: 0.85rem; font-weight: 700; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+
+  footer { background: var(--ink); padding: 28px 24px; text-align: center; }
+  .footer-logo { font-family: 'Noto Serif KR', serif; font-size: 1.1rem; color: var(--gold); font-weight: 900; margin-bottom: 6px; }
+  footer p { font-size: 0.78rem; color: rgba(255,255,255,0.4); }
+
+  @media (max-width: 600px) {
+    .hero { padding: 44px 16px 36px; }
+    .hero-steps { flex-direction: column; align-items: center; }
+    .arrow-sep { transform: rotate(90deg); }
+    .books-grid { grid-template-columns: 1fr; }
+    .member-books-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="#" class="logo">책온 경제 프로젝트 <span>BOOK TEMPERATURE × ECONOMY</span></a>
+    <nav>
+      <button onclick="setView('books')" id="nav-books" class="active">📚 책별 보기</button>
+      <button onclick="setView('members')" id="nav-members">👤 멤버별 보기</button>
+    </nav>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="hero-eyebrow">책온 × 6개월 여정</div>
+  <h1>경제책 읽기 <em>프로젝트</em></h1>
+  <p class="hero-sub">6권의 책으로 완성하는 경제적 사고와 나만의 투자 원칙</p>
+  <div class="hero-steps">
+    <div class="hero-step">
+      <div class="hero-step-box">
+        <div class="hero-step-num">Step 1 · 1–2개월</div>
+        <div class="hero-step-label">경제 문맹 탈출</div>
+        <div class="hero-step-desc">지식을 쌓고 가치관을 세우기</div>
+      </div>
+    </div>
+    <div class="arrow-sep">→</div>
+    <div class="hero-step">
+      <div class="hero-step-box">
+        <div class="hero-step-num">Step 2 · 3–4개월</div>
+        <div class="hero-step-label">투자 가치관 설립</div>
+        <div class="hero-step-desc">좋은 기업을 보는 눈 기르기</div>
+      </div>
+    </div>
+    <div class="arrow-sep">→</div>
+    <div class="hero-step">
+      <div class="hero-step-box">
+        <div class="hero-step-num">Step 3 · 5–6개월</div>
+        <div class="hero-step-label">포트폴리오 작성</div>
+        <div class="hero-step-desc">자산배분 계획 세우기</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="view-bar">
+  <span class="view-bar-label">정렬 기준:</span>
+  <button class="view-btn active" id="vb-books" onclick="setView('books')">책별로 보기</button>
+  <button class="view-btn" id="vb-members" onclick="setView('members')">멤버별로 보기</button>
+</div>
+
+<div class="main-content">
+  <div id="view-books">
+    <div class="books-grid" id="books-grid"></div>
+  </div>
+  <div id="view-members" style="display:none">
+    <div class="member-select-bar" id="member-select-bar">
+      <div class="member-select-label">멤버를 선택하세요</div>
+    </div>
+    <div id="member-detail-area"></div>
+  </div>
+</div>
+
+<!-- WRITE MODAL -->
+<div class="modal-overlay" id="write-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">결과물 올리기</div>
+        <div class="modal-sub" id="write-modal-sub"></div>
+      </div>
+      <button class="modal-close" onclick="closeWriteModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-group">
+        <label class="field-label">이름</label>
+        <input type="text" class="field-input" id="write-name" placeholder="예: 김동현">
+      </div>
+      <div class="field-group">
+        <label class="field-label">제목</label>
+        <input type="text" class="field-input" id="write-title" placeholder="결과물 제목을 입력하세요">
+      </div>
+      <div class="field-group">
+        <label class="field-label">내용</label>
+        <textarea class="field-textarea" id="write-content" placeholder="독후 에세이, 분석 내용, 선언문 등 자유롭게 작성하세요"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeWriteModal()">취소</button>
+        <button class="btn-submit" id="submit-btn" onclick="submitPost()">등록하기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="detail-modal-book"></div>
+        <div class="modal-sub">결과물 상세</div>
+      </div>
+      <button class="modal-close" onclick="closeDetailModal()">✕</button>
+    </div>
+    <div class="post-detail-content">
+      <div class="post-detail-meta">
+        <div style="width:34px;height:34px;border-radius:50%;background:var(--ink);color:var(--gold);font-size:0.8rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;" id="detail-avatar"></div>
+        <div>
+          <div class="post-detail-author" id="detail-author"></div>
+          <div class="post-detail-book" id="detail-book-info"></div>
+        </div>
+        <div class="post-detail-date" id="detail-date"></div>
+      </div>
+      <div class="post-detail-title" id="detail-title"></div>
+      <div class="post-detail-body" id="detail-body"></div>
+      <div class="post-detail-delete">
+        <button class="btn-delete" onclick="deletePost()">삭제</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer>
+  <div class="footer-logo">책온 — BOOK TEMPERATURE</div>
+  <p>책으로 온도를 높이다 · 경제책 읽기 프로젝트 6개월</p>
+</footer>
+
+<script>
+// ── SUPABASE ──
+const { createClient } = supabase;
+const sb = createClient(
+  'https://zjbfyiylybztrbncucyr.supabase.co',
+  'sb_publishable_hDhZbaY66WGKTJUv0XXsQg_w_GQ5CRW'
+);
+
+// ── DATA ──
+const BOOKS = [
+  { id:'b1', month:1, step:1, stepLabel:'Step 1', title:'돈의 속성', author:'김승호', theme:'돈의 기본 개념과 경제 흐름 이해하기', colorClass:'step1-color', tagClass:'tag-step1' },
+  { id:'b2', month:2, step:1, stepLabel:'Step 1', title:'경제 기사 궁금증 300문 300답', author:'곽해선', theme:'경제 뉴스를 읽을 수 있는 사람 되기', colorClass:'step1-color', tagClass:'tag-step1' },
+  { id:'b3', month:3, step:2, stepLabel:'Step 2', title:'월가의 영웅', author:'피터 린치', theme:'좋은 기업을 보는 눈 기르기', colorClass:'step2-color', tagClass:'tag-step2' },
+  { id:'b4', month:4, step:2, stepLabel:'Step 2', title:'돈의 심리학', author:'모건 하우절', theme:'돈과 감정의 관계 이해하기', colorClass:'step2-color', tagClass:'tag-step2' },
+  { id:'b5', month:5, step:3, stepLabel:'Step 3', title:'돈의 공식', author:'윌리엄 번스타인', theme:'자산배분 이해하고 계획 세우기', colorClass:'step3-color', tagClass:'tag-step3' },
+  { id:'b6', month:6, step:3, stepLabel:'Step 3', title:'부의 인문학', author:'브라운스톤', theme:'돈을 삶과 연결하고 실행 계획 세우기', colorClass:'step3-color', tagClass:'tag-step3' }
+];
+
+const MEMBERS = ['동현', '지수', '민준', '서연', '예진', '준혁', '하은', '도윤', '수아', '민서'];
+
+// ── STATE ──
+let allPosts = [];
+let currentView = 'books';
+let writeTargetBookId = null;
+let detailTargetPost = null;
+let selectedMember = MEMBERS[0];
+
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── FETCH ALL POSTS ──
+async function fetchPosts() {
+  const { data, error } = await sb.from('posts').select('*').order('created_at', { ascending: false });
+  if (error) { console.error(error); return; }
+  allPosts = data || [];
+}
+
+// ── VIEW SWITCH ──
+function setView(v) {
+  currentView = v;
+  document.getElementById('view-books').style.display = v === 'books' ? '' : 'none';
+  document.getElementById('view-members').style.display = v === 'members' ? '' : 'none';
+  ['nav-books','nav-members'].forEach(id => document.getElementById(id).classList.remove('active'));
+  ['vb-books','vb-members'].forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById(v === 'books' ? 'nav-books' : 'nav-members').classList.add('active');
+  document.getElementById(v === 'books' ? 'vb-books' : 'vb-members').classList.add('active');
+  if (v === 'books') renderBooksView();
+  else renderMembersView();
+}
+
+// ── BOOKS VIEW ──
+function renderBooksView() {
+  const grid = document.getElementById('books-grid');
+  grid.innerHTML = BOOKS.map(book => {
+    const bookPosts = allPosts.filter(p => p.book_id === book.id);
+    const postItems = bookPosts.length
+      ? bookPosts.map(p => `
+        <div class="post-item" onclick="openDetail('${p.id}')">
+          <div class="post-avatar">${p.name.charAt(0)}</div>
+          <div class="post-info">
+            <div class="post-name">${esc(p.name)}</div>
+            <div class="post-excerpt">${esc(p.title)}</div>
+          </div>
+          <div class="post-date">${formatDate(p.created_at)}</div>
+        </div>`).join('')
+      : `<div class="empty-posts"><span>✍️</span>아직 결과물이 없어요<br>첫 번째로 올려보세요!</div>`;
+    return `
+    <div class="book-card">
+      <div class="book-card-header">
+        <div class="book-month-badge ${book.colorClass}">${book.month}<span>개월차</span></div>
+        <div class="book-meta">
+          <span class="book-step-tag ${book.tagClass}">${book.stepLabel} · ${book.month}개월차</span>
+          <div class="book-title">《${book.title}》</div>
+          <div class="book-author">${book.author}</div>
+        </div>
+      </div>
+      <div class="book-theme">"${book.theme}"</div>
+      <div class="book-posts">
+        <div class="book-posts-header">
+          <span class="book-posts-title">결과물 ${bookPosts.length}개</span>
+          <button class="add-post-btn" onclick="openWrite('${book.id}', event)">+ 올리기</button>
+        </div>
+        <div class="post-list">${postItems}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── MEMBERS VIEW ──
+function renderMembersView() {
+  const bar = document.getElementById('member-select-bar');
+  bar.innerHTML = `<div class="member-select-label">멤버를 선택하세요</div>` +
+    MEMBERS.map(m => `
+      <button class="member-chip ${m === selectedMember ? 'selected' : ''}" onclick="selectMember('${m}')">
+        <div class="chip-avatar">${m.charAt(0)}</div>${m}
+      </button>`).join('');
+  renderMemberDetail();
+}
+
+function selectMember(name) {
+  selectedMember = name;
+  renderMembersView();
+}
+
+function renderMemberDetail() {
+  const area = document.getElementById('member-detail-area');
+  const memberPosts = allPosts.filter(p => p.name === selectedMember);
+  const doneCount = [...new Set(memberPosts.map(p => p.book_id))].length;
+  const progressPct = Math.round(doneCount / BOOKS.length * 100);
+
+  const booksHtml = BOOKS.map(book => {
+    const post = memberPosts.find(p => p.book_id === book.id);
+    const postHtml = post
+      ? `<div class="member-post-area has-post" onclick="openDetail('${post.id}')">
+          <div class="member-post-title">📄 ${esc(post.title)}</div>
+          <div class="member-post-body">${esc(post.content.substring(0,100))}${post.content.length>100?'…':''}</div>
+        </div>`
+      : `<div class="member-post-area" onclick="openWrite('${book.id}', event, '${selectedMember}')">
+          <div class="member-post-empty">✍️ 아직 작성하지 않았어요<br><small>클릭하여 결과물 올리기</small></div>
+        </div>`;
+    return `
+    <div class="member-book-row">
+      <div class="member-book-row-header">
+        <div class="book-month-badge ${book.colorClass}" style="min-width:38px;height:38px;font-size:0.9rem;">${book.month}<span>개월</span></div>
+        <div class="book-meta">
+          <span class="book-step-tag ${book.tagClass}" style="font-size:0.62rem;">${book.stepLabel}</span>
+          <div class="book-title" style="font-size:0.92rem;">《${book.title}》</div>
+          <div class="book-author" style="font-size:0.72rem;">${book.author}</div>
+        </div>
+      </div>
+      ${postHtml}
+    </div>`;
+  }).join('');
+
+  area.innerHTML = `
+    <div class="member-progress">
+      <div class="member-progress-header">
+        <div class="member-big-avatar">${selectedMember.charAt(0)}</div>
+        <div class="member-name-block">
+          <div class="member-name">${selectedMember}</div>
+          <div class="member-stat">완료한 책 <strong>${doneCount} / 6권</strong> · 진행률 <strong>${progressPct}%</strong></div>
+        </div>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-label"><strong>전체 진행률</strong><span>${doneCount}/6 완료</span></div>
+        <div class="progress-track"><div class="progress-fill" style="width:${progressPct}%"></div></div>
+      </div>
+    </div>
+    <div class="member-books-grid">${booksHtml}</div>`;
+}
+
+// ── WRITE MODAL ──
+function openWrite(bookId, e, prefillName) {
+  if (e) e.stopPropagation();
+  writeTargetBookId = bookId;
+  const book = BOOKS.find(b => b.id === bookId);
+  document.getElementById('write-modal-sub').textContent = `《${book.title}》 · ${book.author}`;
+  document.getElementById('write-name').value = prefillName || '';
+  document.getElementById('write-title').value = '';
+  document.getElementById('write-content').value = '';
+  document.getElementById('write-modal').classList.add('open');
+}
+function closeWriteModal() {
+  document.getElementById('write-modal').classList.remove('open');
+  writeTargetBookId = null;
+}
+async function submitPost() {
+  const name = document.getElementById('write-name').value.trim();
+  const title = document.getElementById('write-title').value.trim();
+  const content = document.getElementById('write-content').value.trim();
+  if (!name || !title || !content) { alert('이름, 제목, 내용을 모두 입력해주세요.'); return; }
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = '등록 중...';
+  const { error } = await sb.from('posts').insert({ book_id: writeTargetBookId, name, title, content });
+  btn.disabled = false; btn.textContent = '등록하기';
+  if (error) { alert('등록 중 오류가 발생했습니다.'); console.error(error); return; }
+  await fetchPosts();
+  closeWriteModal();
+  if (currentView === 'books') renderBooksView();
+  else renderMemberDetail();
+  showToast('✅ 결과물이 등록됐어요!');
+}
+
+// ── DETAIL MODAL ──
+function openDetail(postId) {
+  const p = allPosts.find(x => x.id === postId);
+  if (!p) return;
+  detailTargetPost = p;
+  const book = BOOKS.find(b => b.id === p.book_id);
+  document.getElementById('detail-modal-book').textContent = `《${book.title}》`;
+  document.getElementById('detail-avatar').textContent = p.name.charAt(0);
+  document.getElementById('detail-author').textContent = p.name;
+  document.getElementById('detail-book-info').textContent = `${book.author} · ${book.stepLabel} ${book.month}개월차`;
+  document.getElementById('detail-date').textContent = formatDate(p.created_at);
+  document.getElementById('detail-title').textContent = p.title;
+  document.getElementById('detail-body').textContent = p.content;
+  document.getElementById('detail-modal').classList.add('open');
+}
+function closeDetailModal() {
+  document.getElementById('detail-modal').classList.remove('open');
+  detailTargetPost = null;
+}
+async function deletePost() {
+  if (!detailTargetPost) return;
+  if (!confirm('이 결과물을 삭제할까요?')) return;
+  const { error } = await sb.from('posts').delete().eq('id', detailTargetPost.id);
+  if (error) { alert('삭제 중 오류가 발생했습니다.'); return; }
+  await fetchPosts();
+  closeDetailModal();
+  if (currentView === 'books') renderBooksView();
+  else renderMemberDetail();
+  showToast('🗑️ 삭제됐어요.');
+}
+
+document.getElementById('write-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeWriteModal(); });
+document.getElementById('detail-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeDetailModal(); });
+
+// ── UTILS ──
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function formatDate(iso) {
+  const d = new Date(iso);
+  return `${d.getMonth()+1}/${d.getDate()}`;
+}
+
+// ── INIT ──
+(async () => {
+  document.getElementById('books-grid').innerHTML = '<div class="loading-spinner">불러오는 중...</div>';
+  await fetchPosts();
+  renderBooksView();
+})();
+</script>
+</body>
+</html>
